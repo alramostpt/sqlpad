@@ -19,10 +19,7 @@ async function openidClientHandler(req, tokenSet, userinfo, done) {
       message: 'email not provided',
     });
   }
-  let role = 'editor';
-  if (_json.roles && _json.roles.includes('admin')) {
-    role = 'admin';
-  }
+
   try {
     let user = await models.users.findOneByEmail(email);
 
@@ -31,6 +28,11 @@ async function openidClientHandler(req, tokenSet, userinfo, done) {
         appLog.debug(`OIDC User ${email} is disabled`);
         return done(null, false);
       }
+
+      let role = user.role;
+      if (_json.roles && _json.roles.includes('admin')) {
+        role = 'admin';
+      }      
       user.signupAt = new Date();
       const newUser = await models.users.update(user.id, {
         name,
@@ -39,6 +41,11 @@ async function openidClientHandler(req, tokenSet, userinfo, done) {
       });
       appLog.debug(`OIDC User ${email} updated`);
       return done(null, newUser);
+    }
+
+    let role = 'editor';
+    if (_json.roles && _json.roles.includes('admin')) {
+      role = 'admin';
     }
     const allowedDomains = config.get('allowedDomains');
     if (checkAllowedDomains(allowedDomains, email)) {
